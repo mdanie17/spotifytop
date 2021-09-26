@@ -1,0 +1,43 @@
+/*
+ * Globals
+ */
+
+ body {
+   background-color: hsl(225deg, 10%, 8%);
+   counter-reset: rank
+}
+
+ h1 {
+   color: white;
+}
+
+ p {
+   color: white;
+}
+
+ p2 {
+   color: hsl(225deg, 10%, 8%);
+}
+
+ .btn-primary {
+  background-color: #f79862;
+  border-color: #f79862;
+}
+
+ container {
+  max-width: 60%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+ .card-body::before {
+   counter-increment: rank;
+   content: counter(rank) ":";
+
+}
+
+.navbar .dropdown-menu-right { 
+  right: 0; 
+  left: auto; 
+}
