@@ -1,0 +1,27 @@
+{{define "content"}}
+<h1>{{.User.DisplayName}}'s Top {{.Settings.Resultlimit}} Tracks</h1>
+    <div class="row row-cols-1 row-cols-md-1 g-0">
+        {{range $trackInfo := .Result}}
+            <div class="card mb-3">
+                <div class="row g-0">
+                    <div class="col-md-4">
+                        <img src="{{(index $trackInfo.Album.Images 0).URL}}" class="img-fluid rounded-start" alt="...">
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card-body">
+                            <h5 class="card-title">{{$trackInfo.Name}} by {{range $trackInfo.Artists }}{{.Name}}. {{end}}</h5>
+                            <p2 class="card-text">This is a wider card with supporting text below as a natural lead-in to additional content. This content is a little bit longer.</p>
+                            <div class="progress">
+                                <p class="card-text">Artist popularity:</p>
+                                <div class="progress-bar" role="progressbar" style="width: {{$trackInfo.Popularity}}%;" aria-valuenow="{{$trackInfo.Popularity}}" aria-valuemin="0" aria-valuemax="100">{{$trackInfo.Popularity}}%
+                            </div>
+                        </div>
+                        <p2 class="card-text"><small class="text-muted">Album: {{$trackInfo.Album.Name}}</small></p>
+                        <p2 class="card-text"><small class="text-muted">Released: {{$trackInfo.Album.ReleaseDate}}</small></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <\div>
+    {{end}}
+{{end}}

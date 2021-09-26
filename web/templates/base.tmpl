@@ -1,0 +1,70 @@
+{{define "base"}}
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Spotify Top Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>    
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+</head>
+
+<body>
+    <header>
+        <div class="collapse" id="navbarToggleExternalContent">
+            <div class="bg-dark p-3">
+                    <a class="btn btn-primary" href="/" role="button">Home</a>
+                    <a class="btn btn-primary" href="/topartistsauth" role="button">See top artists</a>
+                    <a class="btn btn-primary" href="/toptracksauth" role="button">See top tracks</a>
+                    <a class="nav-item dropdown">
+                        <a class="btn btn-primary dropdown-toggle" type="button" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Settings
+                        </a>
+                        <div class="dropdown-menu keep-open" aria-labelledby="navbarDropdown">
+                            <form class="px-4 py-3" action="/form" method="post">
+                                <h6 class="dropdown-header">Time range</h6>
+                                <label class="dropdown-item"><input type="checkbox" class="sev_check" value="short" name="timecheck" {{if eq .Settings.Timelimit "short"}} checked {{else}} {{end}} /> 1 month</label>
+                                <label class="dropdown-item"><input type="checkbox" class="sev_check" value="medium" name="timecheck" {{if eq .Settings.Timelimit "medium"}}checked {{else}} {{end}} /> 6 months</label>
+                                <label class="dropdown-item"><input type="checkbox" class="sev_check" value="long" name="timecheck" {{if eq .Settings.Timelimit "long"}} checked {{else}} {{end}} /> Several years</label>
+                                <li><hr class="dropdown-divider"></li>
+                                <h6 class="dropdown-header">Number of results</h6>
+                                <input type="range" value="{{.Settings.Resultlimit}}" min="1" max="50" name="limit" oninput="this.nextElementSibling.value = this.value">
+                                <output> {{.Settings.Resultlimit}} </output>
+                                <li><hr class="dropdown-divider"></li>
+                                <button type="submit" class="btn btn-primary">Submit</button>
+                            </form>
+                        </div>
+                    </a>
+            </div>
+        </div>
+        <nav class="navbar navbar-dark bg-dark">
+            <div class="container-fluid">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggleExternalContent" aria-controls="navbarToggleExternalContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <div class=container>
+        {{block "content" .}}{{end}}
+    </div>
+</body>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-/bQdsTh/da6pkI1MST/rWKFNjaCP5gBSY4sEBT38Q/9RBh9AH40zEOg7Hlq2THRZ" crossorigin="anonymous"></script>
+
+<script> 
+jQuery('.dropdown-menu.keep-open').on('click', function (e) {
+  e.stopPropagation();
+});
+</script>
+
+<script>
+$(function () {
+  $('.sev_check').click(function(e) {
+    $('.sev_check').not(this).prop('checked', false);
+  });
+});
+</script>
+
+{{end}}
