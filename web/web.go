@@ -2,6 +2,7 @@ package web
 
 import (
 	"net/http"
+	"os"
 	"strconv"
 	"text/template"
 
@@ -66,11 +67,15 @@ func (w *Web) New() {
 	}
 
 	if w.Clientkey == "" {
-		log.Fatal().Msg("you have to set a client key")
+		if w.Clientkey = os.Getenv("SPOTIFY_ID"); w.Clientkey == "" {
+			log.Fatal().Msg("you have to set a client key")
+		}
 	}
 
 	if w.Secretkey == "" {
-		log.Fatal().Msg("you have to set a secret key")
+		if w.Secretkey = os.Getenv("SPOTIFY_SECREt"); w.Secretkey == "" {
+			log.Fatal().Msg("you have to set a client key")
+		}
 	}
 }
 
