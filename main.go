@@ -1,6 +1,6 @@
 package main
 
-import "gospotify/web"
+import "github.com/mdanie17/spotifytop/web"
 
 func main() {
 	server := web.Web{
