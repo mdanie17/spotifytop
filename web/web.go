@@ -1,6 +1,7 @@
 package web
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -68,13 +69,15 @@ func (w *Web) New() {
 
 	if w.Clientkey == "" {
 		if w.Clientkey = os.Getenv("SPOTIFY_ID"); w.Clientkey == "" {
+			fmt.Println(os.Getenv("SPOTIFY_ID"))
+
 			log.Fatal().Msg("you have to set a client key")
 		}
 	}
 
 	if w.Secretkey == "" {
-		if w.Secretkey = os.Getenv("SPOTIFY_SECREt"); w.Secretkey == "" {
-			log.Fatal().Msg("you have to set a client key")
+		if w.Secretkey = os.Getenv("SPOTIFY_SECRET"); w.Secretkey == "" {
+			log.Fatal().Msg("you have to set a secret key")
 		}
 	}
 }
@@ -104,7 +107,11 @@ func (w *Web) handleFrontPage(rw http.ResponseWriter, r *http.Request) {
 }
 
 func (w *Web) handleTopArtists(rw http.ResponseWriter, r *http.Request) {
-	w.getClient(rw, r)
+	if err := w.getClient(rw, r); err != nil {
+		http.Redirect(rw, r, "/", http.StatusSeeOther)
+		log.Error().Err(err).Msg("could not get client")
+		return
+	}
 
 	user, err := w.Client.CurrentUser(r.Context())
 	if err != nil {
@@ -132,7 +139,11 @@ func (w *Web) handleTopArtists(rw http.ResponseWriter, r *http.Request) {
 }
 
 func (w *Web) handleTopTracks(rw http.ResponseWriter, r *http.Request) {
-	w.getClient(rw, r)
+	if err := w.getClient(rw, r); err != nil {
+		http.Redirect(rw, r, "/", http.StatusSeeOther)
+		log.Error().Err(err).Msg("could not get client")
+		return
+	}
 
 	user, err := w.Client.CurrentUser(r.Context())
 	if err != nil {

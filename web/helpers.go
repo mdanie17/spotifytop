@@ -68,7 +68,7 @@ func (w *Web) getClient(rw http.ResponseWriter, r *http.Request) error {
 
 	token, err := w.Auth.Token(r.Context(), w.State, r)
 	if err != nil {
-		//log.Error().Err(err).Msg("could not get token")
+		log.Error().Err(err).Msg("could not get token")
 		return err
 	}
 
