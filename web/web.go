@@ -7,11 +7,12 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
-	"github.com/zmb3/spotify"
+	"github.com/zmb3/spotify/v2"
+	spotifyauth "github.com/zmb3/spotify/v2/auth"
 )
 
 var (
-	defaultTimeLimit   = "medium"
+	defaultTimeLimit   = "medium_term"
 	defaultResultLimit = 20
 )
 
@@ -34,11 +35,11 @@ type Web struct {
 	Templates map[string]*template.Template
 
 	State     string
-	Auth      spotify.Authenticator
+	Auth      *spotifyauth.Authenticator
 	Clientkey string
 	Secretkey string
 
-	Client spotify.Client
+	Client *spotify.Client
 }
 
 func (w *Web) New() {
@@ -92,113 +93,85 @@ func (w *Web) Run() {
 }
 
 func (w *Web) handleFrontPage(rw http.ResponseWriter, r *http.Request) {
-	var timeframelimit string
-	var resultlimit int
+	settings := w.getSettings(rw, r)
 
-	settings, err := getSettings(rw, r)
-	if err != nil {
-		timeframelimit = defaultTimeLimit
-		resultlimit = defaultResultLimit
-	} else {
-		timeframelimit = settings[0]
-		resultlimit, err = strconv.Atoi(settings[1])
-		if err != nil {
-			log.Error().Err(err).Msgf("could not convert result limit to int: %s", settings[1])
-			resultlimit = defaultResultLimit
-		}
-	}
-
-	w.templateExec(rw, r, "frontpage", TmplData{Settings: Opts{timeframelimit, resultlimit}})
+	w.templateExec(rw, r, "frontpage", TmplData{Settings: settings})
 }
 
 func (w *Web) handleTopArtists(rw http.ResponseWriter, r *http.Request) {
+	w.getClient(rw, r)
 
-	client := w.getClient(rw, r)
-	user, err := client.CurrentUser()
+	user, err := w.Client.CurrentUser(r.Context())
 	if err != nil {
 		log.Error().Err(err).Msgf("could not get user")
 	}
 
-	var timeframelimit string
-	var artistlimit int
-	settings, err := getSettings(rw, r)
-	if err != nil {
-		timeframelimit = defaultTimeLimit
-		artistlimit = defaultResultLimit
-	} else {
-		timeframelimit = settings[0]
-		artistlimit, err = strconv.Atoi(settings[1])
-		if err != nil {
-			log.Error().Err(err).Msgf("could not convert artistlimit setting to int: %s", settings[1])
-			artistlimit = defaultResultLimit
-		}
-	}
+	settings := w.getSettings(rw, r)
 
-	if timeframelimit == "" {
-		timeframelimit = defaultTimeLimit
-	}
+	topartists, err := w.Client.CurrentUsersTopArtists(
+		r.Context(),
+		spotify.Limit(settings.Resultlimit),
+		spotify.Timerange(spotify.Range(settings.Timelimit)),
+	)
 
-	topartists, err := client.CurrentUsersTopArtistsOpt(&spotify.Options{Timerange: &timeframelimit, Limit: &artistlimit})
 	if err != nil {
 		log.Error().Err(err).Msg("could not get current user top artists")
 	}
 
 	Data := TmplData{
 		Result:   topartists.Artists,
-		Settings: Opts{timeframelimit, artistlimit},
+		Settings: Opts{settings.Timelimit, settings.Resultlimit},
 		User:     user.User,
 	}
 	w.templateExec(rw, r, "topartists", Data)
 }
 
 func (w *Web) handleTopTracks(rw http.ResponseWriter, r *http.Request) {
-	client := w.getClient(rw, r)
-	user, err := client.CurrentUser()
+	w.getClient(rw, r)
+
+	user, err := w.Client.CurrentUser(r.Context())
 	if err != nil {
 		log.Error().Err(err).Msgf("could not get user")
 	}
 
-	var timeframelimit string
-	var tracklimit int
-	settings, err := getSettings(rw, r)
-	if err != nil {
-		timeframelimit = defaultTimeLimit
-		tracklimit = defaultResultLimit
-	} else {
-		timeframelimit = settings[0]
-		tracklimit, err = strconv.Atoi(settings[1])
-		if err != nil {
-			log.Error().Err(err).Msg("could not convert artistlimit setting to int")
-			tracklimit = defaultResultLimit
-		}
-	}
+	settings := w.getSettings(rw, r)
 
-	if timeframelimit == "" {
-		timeframelimit = defaultTimeLimit
-	}
-	toptracks, err := client.CurrentUsersTopTracksOpt(&spotify.Options{Timerange: &timeframelimit, Limit: &tracklimit})
+	toptracks, err := w.Client.CurrentUsersTopTracks(
+		r.Context(),
+		spotify.Limit(settings.Resultlimit),
+		spotify.Timerange(spotify.Range(settings.Timelimit)),
+	)
+
 	if err != nil {
 		log.Error().Err(err).Msg("could not get current user top tracks")
+		return
 	}
 
 	Data := TmplData{
 		Result:   toptracks.Tracks,
-		Settings: Opts{timeframelimit, tracklimit},
+		Settings: Opts{settings.Timelimit, settings.Resultlimit},
 		User:     user.User,
 	}
 	w.templateExec(rw, r, "toptracks", Data)
 }
 
 func (w *Web) handleAuthenticateArtists(rw http.ResponseWriter, r *http.Request) {
-	w.Auth = spotify.NewAuthenticator("http://localhost:8080/topartists", spotify.ScopeUserTopRead, spotify.ScopeUserReadPrivate)
-	w.Auth.SetAuthInfo(w.Clientkey, w.Secretkey)
-	w.getClient(rw, r)
+	w.Auth = spotifyauth.New(
+		spotifyauth.WithRedirectURL("http://localhost:8080/topartists"),
+		spotifyauth.WithScopes(spotifyauth.ScopeUserTopRead, spotifyauth.ScopeUserReadPrivate),
+		spotifyauth.WithClientID(w.Clientkey),
+		spotifyauth.WithClientSecret(w.Secretkey),
+	)
 	http.Redirect(rw, r, w.Auth.AuthURL(w.State), http.StatusFound)
 }
 
 func (w *Web) handleAuthenticateTracks(rw http.ResponseWriter, r *http.Request) {
-	w.Auth = spotify.NewAuthenticator("http://localhost:8080/toptracks", spotify.ScopeUserTopRead, spotify.ScopeUserReadPrivate)
-	w.Auth.SetAuthInfo(w.Clientkey, w.Secretkey)
+	w.Auth = spotifyauth.New(
+		spotifyauth.WithRedirectURL("http://localhost:8080/toptracks"),
+		spotifyauth.WithScopes(spotifyauth.ScopeUserTopRead, spotifyauth.ScopeUserReadPrivate),
+		spotifyauth.WithClientID(w.Clientkey),
+		spotifyauth.WithClientSecret(w.Secretkey),
+	)
 	http.Redirect(rw, r, w.Auth.AuthURL(w.State), http.StatusFound)
 }
 
@@ -206,9 +179,14 @@ func (w *Web) handleForm(rw http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		log.Error().Err(err).Msg("could not parse settings form")
 	}
+	timelimit := r.FormValue("timecheck")
+	resultlimit := r.FormValue("limit")
+	resultlimitint, err := strconv.Atoi(resultlimit)
+	if err != nil {
+		log.Error().Err(err).Msg("could not convert result limit to int, using default")
+		resultlimitint = defaultResultLimit
+	}
 
-	timelimit, artistlimit := r.FormValue("timecheck"), r.FormValue("limit")
-
-	w.cookieSet(rw, r, timelimit, artistlimit)
+	w.cookieSet(rw, r, Opts{timelimit, resultlimitint})
 	http.Redirect(rw, r, r.Referer(), http.StatusFound)
 }
