@@ -90,7 +90,7 @@ func (w *Web) handleTopTracks(rw http.ResponseWriter, r *http.Request) {
 
 func (w *Web) handleAuthenticateArtists(rw http.ResponseWriter, r *http.Request) {
 	w.Auth = spotifyauth.New(
-		spotifyauth.WithRedirectURL(fmt.Sprintf("http://%s:%s/topartists", w.ServerHostName, w.ServerPort)),
+		spotifyauth.WithRedirectURL(fmt.Sprintf("http://%s/topartists", w.RedirectHost)),
 		spotifyauth.WithScopes(spotifyauth.ScopeUserTopRead, spotifyauth.ScopeUserReadPrivate),
 		spotifyauth.WithClientID(w.Clientkey),
 		spotifyauth.WithClientSecret(w.Secretkey),
@@ -101,7 +101,7 @@ func (w *Web) handleAuthenticateArtists(rw http.ResponseWriter, r *http.Request)
 
 func (w *Web) handleAuthenticateTracks(rw http.ResponseWriter, r *http.Request) {
 	w.Auth = spotifyauth.New(
-		spotifyauth.WithRedirectURL(fmt.Sprintf("http://%s:%s/toptracks", w.ServerHostName, w.ServerPort)),
+		spotifyauth.WithRedirectURL(fmt.Sprintf("http://%s/toptracks", w.RedirectHost)),
 		spotifyauth.WithScopes(spotifyauth.ScopeUserTopRead, spotifyauth.ScopeUserReadPrivate),
 		spotifyauth.WithClientID(w.Clientkey),
 		spotifyauth.WithClientSecret(w.Secretkey),

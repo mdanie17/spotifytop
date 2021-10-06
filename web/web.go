@@ -38,10 +38,13 @@ type Web struct {
 
 	Templates map[string]*template.Template
 
-	State     string
-	Auth      *spotifyauth.Authenticator
-	Clientkey string
-	Secretkey string
+	State string
+	Auth  *spotifyauth.Authenticator
+	//RedirectHost is used to specify where spotify redirects
+	//needs to specify both hostname and port if needed, e.g. "example.org:8000/toptracks"
+	RedirectHost string
+	Clientkey    string
+	Secretkey    string
 
 	Client *spotify.Client
 }
@@ -62,7 +65,7 @@ func (w *Web) New() {
 
 	if w.ServerHostName == "" {
 		w.ServerHostName = "localhost"
-		log.Info().Msg("empty host name, defaulting to localhost")
+		log.Info().Msg("empty hostname, defaulting to localhost")
 	}
 
 	if w.ServerPort == "" {
@@ -80,6 +83,11 @@ func (w *Web) New() {
 	if w.State == "" {
 		log.Fatal().Msg("you have to set a state string")
 		return
+	}
+
+	if w.RedirectHost == "" {
+		w.RedirectHost = "localhost"
+		log.Info().Msg("empty redirect hostname, defaulting to localhost")
 	}
 
 	if w.Clientkey == "" {
