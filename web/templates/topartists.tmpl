@@ -10,13 +10,12 @@
                     <div class="col-md-8">
                         <div class="card-body">
                             <h5 class="card-title">{{$artistInfo.Name}}</h5>
-                            <p2 class="card-text">This is a wider card with supporting text below as a natural lead-in to additional content. This content is a little bit longer.</p>
                             <div class="progress">
                                 <p class="card-text">Artist popularity:</p>
                                 <div class="progress-bar" role="progressbar" style="width: {{$artistInfo.Popularity}}%;" aria-valuenow="{{$artistInfo.Popularity}}" aria-valuemin="0" aria-valuemax="100">{{$artistInfo.Popularity}}%
                             </div>
                         </div>
-                        <p2 class="card-text"><small class="text-muted">Genres: {{range $artistInfo.Genres}}{{.}}{{end}}</small></p>
+                        <p2 class="card-text"><small class="text-muted">Genres: {{range $artistInfo.Genres}} {{.}}{{end}}</small></p>
                     </div>
                 </div>
             </div>

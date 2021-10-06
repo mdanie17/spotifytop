@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/gob"
 	"fmt"
 	"net/http"
 	"os"
@@ -8,31 +9,32 @@ import (
 	"text/template"
 
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"github.com/rs/zerolog/log"
 	"github.com/zmb3/spotify/v2"
 	spotifyauth "github.com/zmb3/spotify/v2/auth"
 )
 
 var (
-	defaultTimeLimit   = "medium_term"
-	defaultResultLimit = 20
+	defaultTimeLimit      = "medium_term"
+	defaultResultLimit    = 20
+	cookieKeyFlashMessage = "flash-session"
 )
 
-type TmplData struct {
-	Result   interface{}
-	Settings Opts
-	User     spotify.User
-}
-
-type Opts struct {
-	Timelimit   string
-	Resultlimit int
+func init() {
+	// Need to register FlashMessage struct to
+	// later be encoded/decoded by session.AddFlash()
+	gob.Register(flashMessage{})
 }
 
 type Web struct {
 	Router *mux.Router
 
-	ServerPort string
+	CookieKey []byte
+	Cookies   *sessions.CookieStore
+
+	ServerHostName string
+	ServerPort     string
 
 	Templates map[string]*template.Template
 
@@ -48,6 +50,19 @@ func (w *Web) New() {
 	if w.Router == nil {
 		w.Router = mux.NewRouter()
 		w.Routes(w.Router)
+	}
+
+	if w.CookieKey == nil {
+		log.Fatal().Msg("no cookiekey specified")
+	}
+
+	if w.Cookies == nil {
+		w.Cookies = sessions.NewCookieStore(w.CookieKey)
+	}
+
+	if w.ServerHostName == "" {
+		w.ServerHostName = "localhost"
+		log.Info().Msg("empty host name, defaulting to localhost")
 	}
 
 	if w.ServerPort == "" {
@@ -69,8 +84,6 @@ func (w *Web) New() {
 
 	if w.Clientkey == "" {
 		if w.Clientkey = os.Getenv("SPOTIFY_ID"); w.Clientkey == "" {
-			fmt.Println(os.Getenv("SPOTIFY_ID"))
-
 			log.Fatal().Msg("you have to set a client key")
 		}
 	}
@@ -95,114 +108,31 @@ func (w *Web) Routes(r *mux.Router) {
 
 func (w *Web) Run() {
 	log.Info().Msgf("Starting server on port %s", w.ServerPort)
-	if err := http.ListenAndServe("localhost:"+w.ServerPort, w.Router); err != nil {
+	if err := http.ListenAndServe(fmt.Sprintf("%s:%s", w.ServerHostName, w.ServerPort), w.Router); err != nil {
 		log.Fatal().Err(err).Msg("failed to start webserver")
 	}
 }
 
 func (w *Web) handleFrontPage(rw http.ResponseWriter, r *http.Request) {
-	settings := w.getSettings(rw, r)
+	settings := w.cookieGetSettings(rw, r)
 
 	w.templateExec(rw, r, "frontpage", TmplData{Settings: settings})
-}
-
-func (w *Web) handleTopArtists(rw http.ResponseWriter, r *http.Request) {
-	if err := w.getClient(rw, r); err != nil {
-		http.Redirect(rw, r, "/", http.StatusSeeOther)
-		log.Error().Err(err).Msg("could not get client")
-		return
-	}
-
-	user, err := w.Client.CurrentUser(r.Context())
-	if err != nil {
-		log.Error().Err(err).Msgf("could not get user")
-	}
-
-	settings := w.getSettings(rw, r)
-
-	topartists, err := w.Client.CurrentUsersTopArtists(
-		r.Context(),
-		spotify.Limit(settings.Resultlimit),
-		spotify.Timerange(spotify.Range(settings.Timelimit)),
-	)
-
-	if err != nil {
-		log.Error().Err(err).Msg("could not get current user top artists")
-	}
-
-	Data := TmplData{
-		Result:   topartists.Artists,
-		Settings: Opts{settings.Timelimit, settings.Resultlimit},
-		User:     user.User,
-	}
-	w.templateExec(rw, r, "topartists", Data)
-}
-
-func (w *Web) handleTopTracks(rw http.ResponseWriter, r *http.Request) {
-	if err := w.getClient(rw, r); err != nil {
-		http.Redirect(rw, r, "/", http.StatusSeeOther)
-		log.Error().Err(err).Msg("could not get client")
-		return
-	}
-
-	user, err := w.Client.CurrentUser(r.Context())
-	if err != nil {
-		log.Error().Err(err).Msgf("could not get user")
-	}
-
-	settings := w.getSettings(rw, r)
-
-	toptracks, err := w.Client.CurrentUsersTopTracks(
-		r.Context(),
-		spotify.Limit(settings.Resultlimit),
-		spotify.Timerange(spotify.Range(settings.Timelimit)),
-	)
-
-	if err != nil {
-		log.Error().Err(err).Msg("could not get current user top tracks")
-		return
-	}
-
-	Data := TmplData{
-		Result:   toptracks.Tracks,
-		Settings: Opts{settings.Timelimit, settings.Resultlimit},
-		User:     user.User,
-	}
-	w.templateExec(rw, r, "toptracks", Data)
-}
-
-func (w *Web) handleAuthenticateArtists(rw http.ResponseWriter, r *http.Request) {
-	w.Auth = spotifyauth.New(
-		spotifyauth.WithRedirectURL("http://localhost:8080/topartists"),
-		spotifyauth.WithScopes(spotifyauth.ScopeUserTopRead, spotifyauth.ScopeUserReadPrivate),
-		spotifyauth.WithClientID(w.Clientkey),
-		spotifyauth.WithClientSecret(w.Secretkey),
-	)
-	http.Redirect(rw, r, w.Auth.AuthURL(w.State), http.StatusFound)
-}
-
-func (w *Web) handleAuthenticateTracks(rw http.ResponseWriter, r *http.Request) {
-	w.Auth = spotifyauth.New(
-		spotifyauth.WithRedirectURL("http://localhost:8080/toptracks"),
-		spotifyauth.WithScopes(spotifyauth.ScopeUserTopRead, spotifyauth.ScopeUserReadPrivate),
-		spotifyauth.WithClientID(w.Clientkey),
-		spotifyauth.WithClientSecret(w.Secretkey),
-	)
-	http.Redirect(rw, r, w.Auth.AuthURL(w.State), http.StatusFound)
 }
 
 func (w *Web) handleForm(rw http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		log.Error().Err(err).Msg("could not parse settings form")
+		return
 	}
+
 	timelimit := r.FormValue("timecheck")
 	resultlimit := r.FormValue("limit")
 	resultlimitint, err := strconv.Atoi(resultlimit)
 	if err != nil {
-		log.Error().Err(err).Msg("could not convert result limit to int, using default")
+		w.addFlash(rw, r, flashMessage{flashLevelWarning, "You have to select a valid number of results"})
 		resultlimitint = defaultResultLimit
 	}
 
-	w.cookieSet(rw, r, Opts{timelimit, resultlimitint})
-	http.Redirect(rw, r, r.Referer(), http.StatusFound)
+	w.cookieSetSettings(rw, r, Opts{timelimit, resultlimitint})
+	redirectReferer(rw, r)
 }

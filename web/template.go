@@ -35,7 +35,16 @@ func (w *Web) templateGet(name string) *template.Template {
 }
 
 func (w *Web) templateExec(rw http.ResponseWriter, r *http.Request, name string, data interface{}) {
-	if err := w.templateGet(name).ExecuteTemplate(rw, "base", data); err != nil {
+
+	tmplData := struct {
+		Errors []flashMessage
+		Data   interface{}
+	}{
+		Errors: w.getFlash(rw, r),
+		Data:   data,
+	}
+
+	if err := w.templateGet(name).ExecuteTemplate(rw, "base", tmplData); err != nil {
 		log.Error().Err(err).Str("name", name).Interface("data", data).Msg("failed to view template")
 		rw.WriteHeader(http.StatusInternalServerError)
 		return

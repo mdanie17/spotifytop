@@ -23,13 +23,13 @@
                         <div class="dropdown-menu keep-open" aria-labelledby="navbarDropdown">
                             <form class="px-4 py-3" action="/form" method="post">
                                 <h6 class="dropdown-header">Time range</h6>
-                                <label class="dropdown-item"><input type="checkbox" class="sev_check" value="short_term" name="timecheck" {{if eq .Settings.Timelimit "short_term"}} checked {{else}} {{end}} /> 1 month</label>
-                                <label class="dropdown-item"><input type="checkbox" class="sev_check" value="medium_term" name="timecheck" {{if eq .Settings.Timelimit "medium_term"}}checked {{else}} {{end}} /> 6 months</label>
-                                <label class="dropdown-item"><input type="checkbox" class="sev_check" value="long_term" name="timecheck" {{if eq .Settings.Timelimit "long_term"}} checked {{else}} {{end}} /> Several years</label>
+                                <label class="dropdown-item"><input type="checkbox" class="sev_check" value="short_term" name="timecheck" {{if eq .Data.Settings.Timelimit "short_term"}} checked {{else}} {{end}} /> 1 month</label>
+                                <label class="dropdown-item"><input type="checkbox" class="sev_check" value="medium_term" name="timecheck" {{if eq .Data.Settings.Timelimit "medium_term"}}checked {{else}} {{end}} /> 6 months</label>
+                                <label class="dropdown-item"><input type="checkbox" class="sev_check" value="long_term" name="timecheck" {{if eq .Data.Settings.Timelimit "long_term"}} checked {{else}} {{end}} /> Several years</label>
                                 <li><hr class="dropdown-divider"></li>
                                 <h6 class="dropdown-header">Number of results</h6>
-                                <input type="range" value="{{.Settings.Resultlimit}}" min="1" max="50" name="limit" oninput="this.nextElementSibling.value = this.value">
-                                <output> {{.Settings.Resultlimit}} </output>
+                                <input type="range" value="{{.Data.Settings.Resultlimit}}" min="1" max="50" name="limit" oninput="this.nextElementSibling.value = this.value">
+                                <output> {{.Data.Settings.Resultlimit}} </output>
                                 <li><hr class="dropdown-divider"></li>
                                 <button type="submit" class="btn btn-primary">Submit</button>
                             </form>
@@ -44,10 +44,18 @@
                 </button>
             </div>
         </nav>
+
     </header>
 
+
     <div class=container>
-        {{block "content" .}}{{end}}
+        {{range $error := .Errors}}
+            <div class="alert alert-{{$error.Level.String}} alert-dismissible fade show" role="alert">
+                {{$error.Message}}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {{end}}
+        {{block "content" .Data}}{{end}}
     </div>
 </body>
 
