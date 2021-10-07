@@ -46,7 +46,7 @@ type Web struct {
 	Clientkey    string
 	Secretkey    string
 
-	Client *spotify.Client
+	Clients map[string]*spotify.Client
 }
 
 func (w *Web) New() {
@@ -101,17 +101,24 @@ func (w *Web) New() {
 			log.Fatal().Msg("you have to set a secret key")
 		}
 	}
+
+	if w.Clients == nil {
+		w.Clients = make(map[string]*spotify.Client)
+	}
 }
 
 func (w *Web) Routes(r *mux.Router) {
 	r.PathPrefix("/css/").Handler(http.StripPrefix("/css/", http.FileServer(http.Dir("./web/templates/css"))))
 
 	r.HandleFunc("/", w.handleFrontPage).Methods("GET")
-	r.HandleFunc("/topartistsauth", w.handleAuthenticateArtists)
+	// r.HandleFunc("/topartistsauth", w.handleAuthenticateArtists)
 	r.HandleFunc("/topartists", w.handleTopArtists)
-	r.HandleFunc("/toptracksauth", w.handleAuthenticateTracks)
+	// r.HandleFunc("/toptracksauth", w.handleAuthenticateTracks)
 	r.HandleFunc("/toptracks", w.handleTopTracks)
 	r.HandleFunc("/form", w.handleForm)
+	r.HandleFunc("/login", w.handleAuth)
+	r.HandleFunc("/logout", w.handleLogout)
+	r.HandleFunc("/authenticated", w.handleAuthenticated)
 }
 
 func (w *Web) Run() {
@@ -123,8 +130,32 @@ func (w *Web) Run() {
 
 func (w *Web) handleFrontPage(rw http.ResponseWriter, r *http.Request) {
 	settings := w.cookieGetSettings(rw, r)
+	state, err := w.cookieGetState(rw, r)
+	if err != nil {
+		w.templateExec(rw, r, "frontpage", TmplData{Settings: settings, LoggedIn: false})
+		return
+	}
 
-	w.templateExec(rw, r, "frontpage", TmplData{Settings: settings})
+	client, ok := w.Clients[state]
+	if !ok {
+		w.templateExec(rw, r, "frontpage", TmplData{Settings: settings, LoggedIn: false})
+		return
+	}
+
+	user, err := client.CurrentUser(r.Context())
+	if err != nil {
+		w.addFlash(rw, r, flashMessage{flashLevelDanger, "Could not communicate with Spotify - Try clearing cache and trying again"})
+		redirectReferer(rw, r)
+		return
+	}
+
+	Data := TmplData{
+		Settings: settings,
+		User:     user.User,
+		LoggedIn: true,
+	}
+	w.templateExec(rw, r, "frontpage", Data)
+
 }
 
 func (w *Web) handleForm(rw http.ResponseWriter, r *http.Request) {
@@ -143,4 +174,22 @@ func (w *Web) handleForm(rw http.ResponseWriter, r *http.Request) {
 
 	w.cookieSetSettings(rw, r, Opts{timelimit, resultlimitint})
 	redirectReferer(rw, r)
+}
+
+func (w *Web) handleAuthenticated(rw http.ResponseWriter, r *http.Request) {
+	state, err := w.cookieGetState(rw, r)
+	if err != nil {
+		w.addFlash(rw, r, flashMessage{flashLevelDanger, "Could not authenticate - Clear cache and try again"})
+		redirectReferer(rw, r)
+		return
+	}
+
+	w.createClient(rw, r, state)
+	http.Redirect(rw, r, "/", http.StatusFound)
+}
+
+func (w *Web) handleLogout(rw http.ResponseWriter, r *http.Request) {
+	w.deleteCookie(rw, r, "state")
+	w.addFlash(rw, r, flashMessage{flashLevelSuccess, "Successfully logged you out!"})
+	http.Redirect(rw, r, "/", http.StatusFound)
 }

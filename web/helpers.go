@@ -28,6 +28,7 @@ type TmplData struct {
 	Result   interface{}
 	Settings Opts
 	User     spotify.User
+	LoggedIn bool
 }
 
 type Opts struct {
@@ -104,8 +105,21 @@ func (w *Web) cookieSetSettings(rw http.ResponseWriter, r *http.Request, setting
 		settings.Timelimit = defaultTimeLimit
 	}
 
-	cookie := http.Cookie{Name: "settings", Value: settings.Timelimit + "," + strconv.Itoa(settings.Resultlimit)}
+	cookie := http.Cookie{Name: "settings", Value: settings.Timelimit + "," + strconv.Itoa(settings.Resultlimit), MaxAge: 3600}
 	http.SetCookie(rw, &cookie)
+}
+
+func cookieSetState(rw http.ResponseWriter, r *http.Request, state string) {
+	http.SetCookie(rw, &http.Cookie{Name: "state", Value: state, MaxAge: 3600})
+}
+
+func (w *Web) cookieGetState(rw http.ResponseWriter, r *http.Request) (string, error) {
+	cookie, err := cookieGet(rw, r, "state")
+	if err != nil {
+		return "", err
+	}
+
+	return cookie.Value, nil
 }
 
 func cookieGet(rw http.ResponseWriter, r *http.Request, name string) (*http.Cookie, error) {
@@ -143,23 +157,22 @@ func (w *Web) cookieGetSettings(rw http.ResponseWriter, r *http.Request) Opts {
 	return settings
 }
 
-func (w *Web) getClient(rw http.ResponseWriter, r *http.Request) error {
-	if w.Client != nil {
-		return nil
-	}
-
+func (w *Web) createClient(rw http.ResponseWriter, r *http.Request, state string) error {
 	if w.Auth == nil {
-		http.Redirect(rw, r, "/", http.StatusFound)
 		return ErrNoAuthClient
 	}
 
-	token, err := w.Auth.Token(r.Context(), w.State, r)
+	if _, ok := w.Clients[state]; ok {
+		return nil
+	}
+
+	token, err := w.Auth.Token(r.Context(), state, r)
 	if err != nil {
 		log.Error().Err(err).Msg("could not get token")
 		return err
 	}
 
-	w.Client = spotify.New(w.Auth.Client(r.Context(), token))
+	w.Clients[state] = spotify.New(w.Auth.Client(r.Context(), token))
 	return nil
 }
 
@@ -185,4 +198,8 @@ func redirectReferer(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(rw, r, ref, http.StatusSeeOther)
+}
+
+func (w *Web) deleteCookie(rw http.ResponseWriter, r *http.Request, name string) {
+	http.SetCookie(rw, &http.Cookie{Name: name, Value: ""})
 }

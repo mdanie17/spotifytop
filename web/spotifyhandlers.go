@@ -4,20 +4,23 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/aidarkhanov/nanoid"
 	"github.com/rs/zerolog/log"
 	"github.com/zmb3/spotify/v2"
 	spotifyauth "github.com/zmb3/spotify/v2/auth"
 )
 
 func (w *Web) handleTopArtists(rw http.ResponseWriter, r *http.Request) {
-	if err := w.getClient(rw, r); err != nil {
-		log.Error().Err(err).Msg("could not get client")
-		w.addFlash(rw, r, flashMessage{flashLevelDanger, "Could not communicate with Spotify - Try clearing cache and trying again"})
+	state, err := w.cookieGetState(rw, r)
+	if err != nil {
+		w.addFlash(rw, r, flashMessage{flashLevelDanger, "You have to log in first"})
 		redirectReferer(rw, r)
 		return
 	}
 
-	user, err := w.Client.CurrentUser(r.Context())
+	client := w.Clients[state]
+
+	user, err := client.CurrentUser(r.Context())
 	if err != nil {
 		log.Error().Err(err).Msgf("could not get user")
 		w.addFlash(rw, r, flashMessage{flashLevelDanger, "Could not communicate with Spotify - Try clearing cache and trying again"})
@@ -27,7 +30,7 @@ func (w *Web) handleTopArtists(rw http.ResponseWriter, r *http.Request) {
 
 	settings := w.cookieGetSettings(rw, r)
 
-	topartists, err := w.Client.CurrentUsersTopArtists(
+	topartists, err := client.CurrentUsersTopArtists(
 		r.Context(),
 		spotify.Limit(settings.Resultlimit),
 		spotify.Timerange(spotify.Range(settings.Timelimit)),
@@ -44,20 +47,23 @@ func (w *Web) handleTopArtists(rw http.ResponseWriter, r *http.Request) {
 		Result:   topartists.Artists,
 		Settings: Opts{settings.Timelimit, settings.Resultlimit},
 		User:     user.User,
+		LoggedIn: true,
 	}
 
 	w.templateExec(rw, r, "topartists", Data)
 }
 
 func (w *Web) handleTopTracks(rw http.ResponseWriter, r *http.Request) {
-	if err := w.getClient(rw, r); err != nil {
-		log.Error().Err(err).Msg("could not get client")
-		w.addFlash(rw, r, flashMessage{flashLevelDanger, "Could not communicate with Spotify - Try clearing cache and trying again"})
+	state, err := w.cookieGetState(rw, r)
+	if err != nil {
+		w.addFlash(rw, r, flashMessage{flashLevelDanger, "You have to log in first"})
 		redirectReferer(rw, r)
 		return
 	}
 
-	user, err := w.Client.CurrentUser(r.Context())
+	client := w.Clients[state]
+
+	user, err := client.CurrentUser(r.Context())
 	if err != nil {
 		log.Error().Err(err).Msgf("could not get user")
 		w.addFlash(rw, r, flashMessage{flashLevelDanger, "Could not communicate with Spotify - Try clearing cache and trying again"})
@@ -67,7 +73,7 @@ func (w *Web) handleTopTracks(rw http.ResponseWriter, r *http.Request) {
 
 	settings := w.cookieGetSettings(rw, r)
 
-	toptracks, err := w.Client.CurrentUsersTopTracks(
+	toptracks, err := client.CurrentUsersTopTracks(
 		r.Context(),
 		spotify.Limit(settings.Resultlimit),
 		spotify.Timerange(spotify.Range(settings.Timelimit)),
@@ -84,28 +90,21 @@ func (w *Web) handleTopTracks(rw http.ResponseWriter, r *http.Request) {
 		Result:   toptracks.Tracks,
 		Settings: Opts{settings.Timelimit, settings.Resultlimit},
 		User:     user.User,
+		LoggedIn: true,
 	}
+
 	w.templateExec(rw, r, "toptracks", Data)
 }
 
-func (w *Web) handleAuthenticateArtists(rw http.ResponseWriter, r *http.Request) {
+func (w *Web) handleAuth(rw http.ResponseWriter, r *http.Request) {
+	state := nanoid.New()
+	cookieSetState(rw, r, state)
 	w.Auth = spotifyauth.New(
-		spotifyauth.WithRedirectURL(fmt.Sprintf("http://%s/topartists", w.RedirectHost)),
+		spotifyauth.WithRedirectURL(fmt.Sprintf("http://%s/authenticated", w.RedirectHost)),
 		spotifyauth.WithScopes(spotifyauth.ScopeUserTopRead, spotifyauth.ScopeUserReadPrivate),
 		spotifyauth.WithClientID(w.Clientkey),
 		spotifyauth.WithClientSecret(w.Secretkey),
 	)
 
-	http.Redirect(rw, r, w.Auth.AuthURL(w.State), http.StatusFound)
-}
-
-func (w *Web) handleAuthenticateTracks(rw http.ResponseWriter, r *http.Request) {
-	w.Auth = spotifyauth.New(
-		spotifyauth.WithRedirectURL(fmt.Sprintf("http://%s/toptracks", w.RedirectHost)),
-		spotifyauth.WithScopes(spotifyauth.ScopeUserTopRead, spotifyauth.ScopeUserReadPrivate),
-		spotifyauth.WithClientID(w.Clientkey),
-		spotifyauth.WithClientSecret(w.Secretkey),
-	)
-
-	http.Redirect(rw, r, w.Auth.AuthURL(w.State), http.StatusFound)
+	http.Redirect(rw, r, w.Auth.AuthURL(state), http.StatusFound)
 }

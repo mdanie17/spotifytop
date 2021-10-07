@@ -3,8 +3,13 @@
   <main class="px-3">
     <h1>Find out what music you listen to the most</h1>
     <p class="lead">Login with spotify to find out what music you listen to the most</p>
-    <a class="btn btn-primary" href="/topartistsauth" role="button">See top artists</a>
-    <a class="btn btn-primary" href="/toptracksauth" role="button">See top tracks</a>
+    <a class="btn btn-primary" href="/topartists" role="button">See top artists</a>
+    <a class="btn btn-primary" href="/toptracks" role="button">See top tracks</a>
+    {{if .LoggedIn}}
+    <p> You are currently logged in as: {{.User.DisplayName}} <a href="/logout"> Not you?</a></p>
+    {{else}}
+    <a class="btn btn-primary" href="/login" role="button">Log In</a>
+    {{end}}
   </main>
 
 {{end}}
