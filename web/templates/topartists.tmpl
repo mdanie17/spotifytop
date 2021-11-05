@@ -1,5 +1,5 @@
 {{define "content"}}
-<h1>{{.User.DisplayName}}'s Top {{.Settings.Resultlimit}} Artists</h1>
+<h1>{{.User.DisplayName}}'s Top {{.Settings.Resultlimit}} Artists - {{.Settings.TimeLimitFormatter}}</h1>
     <div class="row row-cols-1 row-cols-md-1 g-0">
         {{range $artistInfo := .Result}}
             <div class="card mb-3">

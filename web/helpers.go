@@ -52,6 +52,19 @@ func (fl flashLevel) String() string {
 	return "info"
 }
 
+func (o Opts) TimeLimitFormatter() string {
+	switch o.Timelimit {
+	case "short_term":
+		return "Last month"
+	case "medium_term":
+		return "Last 6 months"
+	case "long_term":
+		return "All time"
+	default:
+		return "Undefined timelimit"
+	}
+}
+
 type flashMessage struct {
 	Level   flashLevel
 	Message string
@@ -202,4 +215,13 @@ func redirectReferer(rw http.ResponseWriter, r *http.Request) {
 
 func (w *Web) deleteCookie(rw http.ResponseWriter, r *http.Request, name string) {
 	http.SetCookie(rw, &http.Cookie{Name: name, Value: ""})
+}
+
+func getTrackIDs(tracks []spotify.FullTrack) []spotify.ID {
+	var ids []spotify.ID
+	for _, track := range tracks {
+		ids = append(ids, track.ID)
+	}
+
+	return ids
 }

@@ -115,6 +115,7 @@ func (w *Web) Routes(r *mux.Router) {
 	r.HandleFunc("/topartists", w.handleTopArtists)
 	// r.HandleFunc("/toptracksauth", w.handleAuthenticateTracks)
 	r.HandleFunc("/toptracks", w.handleTopTracks)
+	r.HandleFunc("/createplaylist", w.handleCreatePlaylist)
 	r.HandleFunc("/form", w.handleForm)
 	r.HandleFunc("/login", w.handleAuth)
 	r.HandleFunc("/logout", w.handleLogout)
