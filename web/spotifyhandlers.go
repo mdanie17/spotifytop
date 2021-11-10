@@ -19,7 +19,12 @@ func (w *Web) handleTopArtists(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := w.Clients[state]
+	client, ok := w.Clients[state]
+	if !ok {
+		w.addFlash(rw, r, flashMessage{flashLevelWarning, "Your session has expired"})
+		http.Redirect(rw, r, "/logout", http.StatusFound)
+		return
+	}
 
 	user, err := client.CurrentUser(r.Context())
 	if err != nil {
@@ -62,7 +67,12 @@ func (w *Web) handleTopTracks(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := w.Clients[state]
+	client, ok := w.Clients[state]
+	if !ok {
+		w.addFlash(rw, r, flashMessage{flashLevelWarning, "Your session has expired"})
+		http.Redirect(rw, r, "/logout", http.StatusFound)
+		return
+	}
 
 	user, err := client.CurrentUser(r.Context())
 	if err != nil {
@@ -119,7 +129,12 @@ func (w *Web) handleCreatePlaylist(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := w.Clients[state]
+	client, ok := w.Clients[state]
+	if !ok {
+		w.addFlash(rw, r, flashMessage{flashLevelWarning, "Your session has expired"})
+		http.Redirect(rw, r, "/logout", http.StatusFound)
+		return
+	}
 
 	user, err := client.CurrentUser(r.Context())
 	if err != nil {

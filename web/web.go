@@ -190,6 +190,14 @@ func (w *Web) handleAuthenticated(rw http.ResponseWriter, r *http.Request) {
 }
 
 func (w *Web) handleLogout(rw http.ResponseWriter, r *http.Request) {
+	state, err := w.cookieGetState(rw, r)
+	if err != nil {
+		w.addFlash(rw, r, flashMessage{flashLevelDanger, "Something went wrong logging you out"})
+		http.Redirect(rw, r, "/", http.StatusFound)
+	}
+
+	w.Clients[state] = nil
+
 	w.deleteCookie(rw, r, "state")
 	w.addFlash(rw, r, flashMessage{flashLevelSuccess, "Successfully logged you out!"})
 	http.Redirect(rw, r, "/", http.StatusFound)
