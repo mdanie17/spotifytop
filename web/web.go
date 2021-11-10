@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"text/template"
 
 	"github.com/gorilla/mux"
@@ -87,7 +88,9 @@ func (w *Web) New() {
 
 	if w.RedirectHost == "" {
 		w.RedirectHost = "localhost"
-		log.Info().Msg("empty redirect hostname, defaulting to localhost")
+		log.Info().Msg("empty redirect hostname, defaulting to http://localhost")
+	} else if !strings.Contains(w.RedirectHost, "http") {
+		log.Fatal().Msg("redirecthost needs to specify either http or https")
 	}
 
 	if w.Clientkey == "" {

@@ -111,7 +111,7 @@ func (w *Web) handleAuth(rw http.ResponseWriter, r *http.Request) {
 	state := nanoid.New()
 	cookieSetState(rw, r, state)
 	w.Auth = spotifyauth.New(
-		spotifyauth.WithRedirectURL(fmt.Sprintf("http://%s/authenticated", w.RedirectHost)),
+		spotifyauth.WithRedirectURL(fmt.Sprintf("%s/authenticated", w.RedirectHost)),
 		spotifyauth.WithScopes(spotifyauth.ScopeUserTopRead, spotifyauth.ScopeUserReadPrivate, spotifyauth.ScopePlaylistModifyPrivate),
 		spotifyauth.WithClientID(w.Clientkey),
 		spotifyauth.WithClientSecret(w.Secretkey),
