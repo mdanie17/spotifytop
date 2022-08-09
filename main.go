@@ -4,9 +4,9 @@ import "github.com/mdanie17/spotifytop/web"
 
 func main() {
 	server := web.Web{
-		ServerPort:   "8080",
+		ServerPort:   "8888",
 		State:        "secret",
-		RedirectHost: "localhost:8080",
+		RedirectHost: "https://spotifytop.mdask.dk",
 		CookieKey:    []byte("secret"),
 	}
 
