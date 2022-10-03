@@ -71,6 +71,7 @@ func (w *Web) New() {
 
 	if w.ServerPort == "" {
 		w.ServerPort = "8080"
+		log.Info().Msg("empty serverport, defaulting to 8080")
 	}
 
 	if w.Templates == nil {
@@ -126,7 +127,7 @@ func (w *Web) Routes(r *mux.Router) {
 }
 
 func (w *Web) Run() {
-	log.Info().Msgf("Starting server on port %s", w.ServerPort)
+	log.Info().Msgf("Starting server on port %s:%s", w.ServerHostName, w.ServerPort)
 	if err := http.ListenAndServe(fmt.Sprintf("%s:%s", w.ServerHostName, w.ServerPort), w.Router); err != nil {
 		log.Fatal().Err(err).Msg("failed to start webserver")
 	}
