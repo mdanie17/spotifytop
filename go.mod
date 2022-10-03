@@ -7,5 +7,6 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/sessions v1.2.1
 	github.com/rs/zerolog v1.25.0
+	github.com/spf13/viper v1.13.0
 	github.com/zmb3/spotify/v2 v2.0.0
 )

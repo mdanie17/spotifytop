@@ -1,13 +1,25 @@
 package main
 
-import "github.com/mdanie17/spotifytop/web"
+import (
+	"github.com/mdanie17/spotifytop/config"
+	"github.com/mdanie17/spotifytop/web"
+	"github.com/rs/zerolog/log"
+)
 
 func main() {
+	cfg, err := config.GetServerConfig()
+	if err != nil {
+		log.Error().Err(err).Msg("could not get config")
+		return
+	}
+
 	server := web.Web{
-		ServerPort:   "8888",
-		State:        "secret",
-		RedirectHost: "https://spotifytop.mdask.dk",
-		CookieKey:    []byte("secret"),
+		ServerPort:   cfg.ServerPort,
+		State:        cfg.State,
+		RedirectHost: cfg.ServerHost,
+		CookieKey:    []byte(cfg.Cookiekey),
+		Clientkey:    cfg.SpotifyClientKey,
+		Secretkey:    cfg.SpotifySecretKey,
 	}
 
 	server.New()
