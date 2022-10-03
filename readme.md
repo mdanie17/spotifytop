@@ -8,7 +8,7 @@ To start tool, configure main, e.g.
 server := web.Web{
 	ServerPort:   "8888",
 	State:        "secret",
-	RedirectHost: "https://spotifytop.mdask.dk",
+	RedirectHost: "https://example.org",
 	CookieKey:    []byte("secret"),
 }
 ```
