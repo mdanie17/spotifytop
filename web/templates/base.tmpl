@@ -54,7 +54,7 @@
     </header>
 
 
-    <div class=container>
+    <div class="container w-50">
         {{range $error := .Errors}}
             <div class="alert alert-{{$error.Level.String}} alert-dismissible fade show" role="alert">
                 {{$error.Message}}
