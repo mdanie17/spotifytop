@@ -1,7 +1,7 @@
 {{define "content"}}
 <h1>{{.User.DisplayName}}'s Top {{.Settings.Resultlimit}} - {{.Settings.TimeLimitFormatter}}</h1>
     <a class="btn btn-primary" href="/createplaylist" role="button">Create playlist with these tracks</a>
-    <div class="row row-cols-1 row-cols-md-1 g-0">
+    <div class="row-cols-1 justify-content-md-center g-0">
         {{range $trackInfo := .Result}}
             <div class="card mb-3">
                 <div class="row g-0">
@@ -11,9 +11,9 @@
                     <div class="col-md-8">
                         <div class="card-body">
                             <h5 class="card-title">{{$trackInfo.Name}} by {{range $trackInfo.Artists }}{{.Name}}. {{end}}</h5>
+                            <p class="card-text text-dark">Artist popularity:</p>
                             <div class="progress">
-                                <p class="card-text">Artist popularity:</p>
-                                <div class="progress-bar" role="progressbar" style="width: {{$trackInfo.Popularity}}%;" aria-valuenow="{{$trackInfo.Popularity}}" aria-valuemin="0" aria-valuemax="100">{{$trackInfo.Popularity}}%
+                                <div class="progress-bar" role="progressbar" style="width: {{$trackInfo.Popularity}}%" aria-valuenow="{{$trackInfo.Popularity}}" aria-valuemin="0" aria-valuemax="100">{{$trackInfo.Popularity}}%
                             </div>
                         </div>
                         <p2 class="card-text"><small class="text-muted">Album: {{$trackInfo.Album.Name}}</small></p>
@@ -22,6 +22,6 @@
                 </div>
             </div>
         </div>
-    <\div>
-    {{end}}
+        {{end}}
+    </div>
 {{end}}
