@@ -14,14 +14,26 @@ const (
 )
 
 type ServerConfig struct {
+	// ServerHost specifies the host the server listens on
 	ServerHost string `mapstructure:"server_host"`
+	// ServerPort specifies the port the server listens on
 	ServerPort string `mapstructure:"server_port"`
-	State      string `mapstructure:"spotify_state"`
-	Cookiekey  string `mapstructure:"cookie_key"`
+	// State specifies the string spotify uses to generate unique URLs
+	State string `mapstructure:"spotify_state"`
+	// CookieKey specifies the key used for encoding the cookies
+	Cookiekey string `mapstructure:"cookie_key"`
 
+	// SpotifyRedirectURI specifies the URI that will be redirected
+	// to from spotify upon succesful login
+	// This needs to include protocol and port, e.g:
+	// http://localhost:8080
 	SpotifyRedirectURI string `mapstructure:"spotify_redirect_uri"`
-	SpotifyClientKey   string `mapstructure:"spotify_client_key"`
-	SpotifySecretKey   string `mapstructure:"spotify_secret_key"`
+	// SpotifyClientKey is the client key specified on the spotify
+	// developer portal
+	SpotifyClientKey string `mapstructure:"spotify_client_key"`
+	// SpotifySecretKey is the client key specified on the spotify
+	// developer portal
+	SpotifySecretKey string `mapstructure:"spotify_secret_key"`
 }
 
 // Generates the path string
