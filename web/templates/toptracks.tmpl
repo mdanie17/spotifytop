@@ -1,6 +1,7 @@
 {{define "content"}}
-<h1>{{.User.DisplayName}}'s Top {{.Settings.Resultlimit}} - {{.Settings.TimeLimitFormatter}}</h1>
-    <a class="btn btn-primary" href="/createplaylist" role="button">Create playlist with these tracks</a>
+<h1>{{.User.DisplayName}}'s Top {{.Settings.Resultlimit}} Tracks - {{.Settings.TimeLimitFormatter}}</h1>
+    <a class="btn btn-primary mb-2" href="/createplaylist" role="button">Create playlist with these tracks</a>
+    <br>
     <div class="row-cols-1 justify-content-md-center g-0">
         {{range $trackInfo := .Result}}
             <div class="card mb-3">
