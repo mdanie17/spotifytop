@@ -19,8 +19,9 @@ type ServerConfig struct {
 	State      string `mapstructure:"spotify_state"`
 	Cookiekey  string `mapstructure:"cookie_key"`
 
-	SpotifyClientKey string `mapstructure:"spotify_client_key"`
-	SpotifySecretKey string `mapstructure:"spotify_secret_key"`
+	SpotifyRedirectURI string `mapstructure:"spotify_redirect_uri"`
+	SpotifyClientKey   string `mapstructure:"spotify_client_key"`
+	SpotifySecretKey   string `mapstructure:"spotify_secret_key"`
 }
 
 // Generates the path string
