@@ -18,11 +18,11 @@ type ServerConfig struct {
 	ServerHost string `mapstructure:"server_host"`
 	// ServerPort specifies the port the server listens on
 	ServerPort string `mapstructure:"server_port"`
-	// State specifies the string spotify uses to generate unique URLs
-	State string `mapstructure:"spotify_state"`
 	// CookieKey specifies the key used for encoding the cookies
 	Cookiekey string `mapstructure:"cookie_key"`
 
+	// SpotifyState specifies the string spotify uses to generate unique URLs
+	SpotifyState string `mapstructure:"spotify_state"`
 	// SpotifyRedirectURI specifies the URI that will be redirected
 	// to from spotify upon succesful login
 	// This needs to include protocol and port, e.g:
